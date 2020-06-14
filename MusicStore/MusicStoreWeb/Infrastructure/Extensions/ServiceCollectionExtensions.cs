@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MusicStoreWeb.Areas.Admin.Services.Contracts;
+using MusicStoreWeb.Areas.Admin.Services.Implementations;
 using MusicStoreWeb.Data;
 using MusicStoreWeb.Services.Contracts;
 using MusicStoreWeb.Services.Implementation;
@@ -14,7 +16,12 @@ namespace MusicStoreWeb.Infrastructure.Extensions
             => services
                 .AddTransient<IArtistService, ArtistService>()
                 .AddTransient<ISongService, SongService>()
-                .AddTransient<IAlbumService, AlbumService>();
+                .AddTransient<IAlbumService, AlbumService>()
+                .AddTransient<IAdminArtistService, AdminArtistService>()
+                .AddTransient<IAdminSongService, AdminSongService>()
+                .AddTransient<IAdminAlbumService, AdminAlbumService>()
+                .AddTransient<IShoppingService, ShoppingService>()
+                .AddSingleton<IShoppingCartManager, ShoppingCartManager>();
 
         public static IServiceCollection AddIdentity(this IServiceCollection services)
         {
@@ -25,6 +32,7 @@ namespace MusicStoreWeb.Infrastructure.Extensions
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireUppercase = false;
             })
+                .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<MusicStoreDbContext>()
                 .AddDefaultTokenProviders();
 

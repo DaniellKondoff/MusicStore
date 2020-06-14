@@ -1,9 +1,13 @@
-﻿using MusicStoreWeb.Areas.Admin.Services.Contracts;
+﻿using Microsoft.EntityFrameworkCore;
+using MusicStoreWeb.Areas.Admin.Services.Contracts;
 using MusicStoreWeb.Areas.Admin.Services.Models.Albums;
 using MusicStoreWeb.Data;
-using System;
+using MusicStoreWeb.Data.Models;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using static MusicStoreWeb.Services.ServiceConstants;
+
 
 namespace MusicStoreWeb.Areas.Admin.Services.Implementations
 {
@@ -16,59 +20,148 @@ namespace MusicStoreWeb.Areas.Admin.Services.Implementations
             this.db = db;
         }
 
-        public Task<bool> AddSongToAlbumAsync(int id, int songId, int artistId)
+        public async Task<bool> AddSongToAlbumAsync(int id, int songId, int artistId)
         {
-            throw new NotImplementedException();
+            var album = await this.db.Albums.FindAsync(id);
+            if (album == null)
+            {
+                return false;
+            }
+
+            if (album.Songs.Count() >= album.AmountOfSongs)
+            {
+                return false;
+            }
+
+            var song = await this.db.Songs.FindAsync(songId);
+            if (song == null)
+            {
+                return false;
+            }
+
+            if (album.ArtistId != artistId || song.ArtistId != artistId)
+            {
+                return false;
+            }
+
+            this.db.SongsAlbums.Add(new SongAlbum
+            {
+                AlbumId = album.Id,
+                SongId = song.Id
+            });
+
+            await this.db.SaveChangesAsync();
+
+            return true;
         }
 
-        public Task CreateAsync(string title, decimal price, int amountOfSongs, int artistId)
+        public async Task CreateAsync(string title, decimal price, int amountOfSongs, int artistId)
         {
-            throw new NotImplementedException();
+            var album = new Album
+            {
+                Title = title,
+                Price = price,
+                AmountOfSongs = amountOfSongs,
+                ArtistId = artistId
+            };
+
+            await this.db.Albums.AddAsync(album);
+            await this.db.SaveChangesAsync();
         }
 
-        public Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
-            throw new NotImplementedException();
+            var album = await this.db.Albums.FindAsync(id);
+
+            if (album == null)
+            {
+                return false;
+            }
+
+            this.db.Remove(album);
+            await this.db.SaveChangesAsync();
+
+            return true;
         }
 
-        public Task<AdminAlbumDetailsServiceModel> DetailsAsync(int id)
+        public async Task<AdminAlbumDetailsServiceModel> DetailsAsync(int id)
         {
-            throw new NotImplementedException();
+            return await this.db.Albums
+                .Where(a => a.Id == id)
+                .Select(x => new AdminAlbumDetailsServiceModel
+                {
+                     Id = x.Id,
+                     Artist = x.Artist.Name,
+                     Title = x.Title,
+                     Songs = x.Songs.Select(s => s.Song.Name)
+                })
+                .FirstOrDefaultAsync();
         }
 
-        public Task EditAsync(int id, string title, decimal price, int amountOfSongs, int artistId)
+        public async Task EditAsync(int id, string title, decimal price, int amountOfSongs, int artistId)
         {
-            throw new NotImplementedException();
+            var album = await this.db.Albums.FindAsync(id);
+
+            album.Title = title;
+            album.Price = price;
+            album.AmountOfSongs = amountOfSongs;
+            album.ArtistId = artistId;
+
+            this.db.Albums.Update(album);
+            await this.db.SaveChangesAsync();
         }
 
-        public Task<bool> ExistAsync(int id)
+        public async Task<bool> ExistAsync(int id)
         {
-            throw new NotImplementedException();
+            return await this.db.Albums.AnyAsync(a => a.Id == id);
         }
 
-        public Task<int> GetArtistIdByAlbumId(int Id)
+        public async Task<int> GetArtistIdByAlbumId(int Id)
         {
-            throw new NotImplementedException();
+            var album = await this.db.Albums.FindAsync(Id);
+
+            return album.ArtistId;
         }
 
-        public Task<AdminAlbumEditServiceModel> GetByIdAsync(int id)
+        public async Task<AdminAlbumEditServiceModel> GetByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            return await this.db.Albums
+                .Where(a => a.Id == id)
+                .Select(a => new AdminAlbumEditServiceModel
+                {
+                    Title = a.Title,
+                    Price = a.Price,
+                    AmountOfSongs = a.Songs.Count()
+                })
+                .FirstOrDefaultAsync();
         }
 
-        public Task<bool> IsSongAddedAsync(int id, int songId)
+        public async Task<bool> IsSongAddedAsync(int id, int songId)
         {
-            throw new NotImplementedException();
+            return await this.db.SongsAlbums.AnyAsync(sa => sa.AlbumId == id && sa.SongId == songId);
         }
 
-        public Task<IEnumerable<AdminAlbumsListingServiceModel>> ListAllAsync(int page = 1)
+        public async Task<IEnumerable<AdminAlbumsListingServiceModel>> ListAllAsync(int page = 1)
         {
-            throw new NotImplementedException();
+            return await this.db
+                .Albums
+                .OrderByDescending(a => a.Id)
+                .Skip((page - 1) * AdminAlbumsListingPageSize)
+                .Take(AdminAlbumsListingPageSize)
+                .Select(x => new AdminAlbumsListingServiceModel
+                {
+                    Id = x.Id,
+                    Title = x.Title,
+                    Artist = x.Artist.Name,
+                    AmountOfSongs = x.Songs.Count(),
+                    Price = x.Price
+                })
+                .ToListAsync();
         }
 
-        public Task<int> TotalAsync()
+        public async Task<int> TotalAsync()
         {
-            throw new NotImplementedException();
+            return await this.db.Albums.CountAsync();
         }
     }
 }

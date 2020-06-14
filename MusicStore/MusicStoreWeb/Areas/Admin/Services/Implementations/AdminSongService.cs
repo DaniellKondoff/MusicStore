@@ -1,10 +1,14 @@
-﻿using MusicStoreWeb.Areas.Admin.Services.Contracts;
+﻿using Microsoft.EntityFrameworkCore;
+using MusicStoreWeb.Areas.Admin.Services.Contracts;
 using MusicStoreWeb.Areas.Admin.Services.Models.Songs;
 using MusicStoreWeb.Data;
 using MusicStoreWeb.Data.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using static MusicStoreWeb.Services.ServiceConstants;
+
 
 namespace MusicStoreWeb.Areas.Admin.Services.Implementations
 {
@@ -17,54 +21,129 @@ namespace MusicStoreWeb.Areas.Admin.Services.Implementations
             this.db = db;
         }
 
-        public Task<IEnumerable<AdminSongListingServiceModel>> AllAsync(int page = 1)
+        public async Task<IEnumerable<AdminSongListingServiceModel>> AllAsync(int page = 1)
         {
-            throw new NotImplementedException();
+            return await this.db.Songs
+                .OrderByDescending(a => a.Id)
+                .Skip((page - 1) * AdminSongListingPageSize)
+                .Take(AdminSongListingPageSize)
+                .Select(s => new AdminSongListingServiceModel
+                {
+                    Name = s.Name,
+                    Id = s.Id,
+                    Artist = s.Artist.Name
+                })
+                .ToListAsync();
         }
 
-        public Task<IEnumerable<AdminSongBaseServiceModel>> AllBasicAsync(int id)
+        public async Task<IEnumerable<AdminSongBaseServiceModel>> AllBasicAsync(int id)
         {
-            throw new NotImplementedException();
+            return await this.db.Songs
+                .OrderByDescending(s => s.Id)
+                .Where(s => s.ArtistId == id)
+                .Select(s => new AdminSongBaseServiceModel
+                {
+                    Id = s.Id,
+                    Name = s.Name
+                })
+                .ToListAsync();
         }
 
-        public Task CreateAsync(string name, decimal price, double duration, int artistId, Ganre ganre)
+        public async Task CreateAsync(string name, decimal price, double duration, int artistId, Ganre ganre)
         {
-            throw new NotImplementedException();
+            var song = new Song
+            {
+                Name = name,
+                Price = price,
+                Duration = duration,
+                ArtistId = artistId,
+                Ganre = ganre
+            };
+
+            await this.db.Songs.AddAsync(song);
+            await this.db.SaveChangesAsync();
         }
 
-        public Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
-            throw new NotImplementedException();
+            var song = await this.db.Songs.FindAsync(id);
+
+            if (song == null)
+            {
+                return false;
+            }
+
+            this.db.Songs.Remove(song);
+            await this.db.SaveChangesAsync();
+
+            return true;
         }
 
-        public Task<AdminSongDetailsServiceModel> DetailsAsync(int id)
+        public async Task<AdminSongDetailsServiceModel> DetailsAsync(int id)
         {
-            throw new NotImplementedException();
+            return await this.db.Songs
+                .Where(s => s.Id == id)
+                .Select(s => new AdminSongDetailsServiceModel
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Artist = s.Artist.Name,
+                    Duration = s.Duration,
+                    Price = s.Price,
+                    Ganre = s.Ganre
+                })
+                .FirstOrDefaultAsync();
         }
 
-        public Task EditAsync(int id, string name, decimal price, double duration, int artistId, Ganre ganre)
+        public async Task EditAsync(int id, string name, decimal price, double duration, int artistId, Ganre ganre)
         {
-            throw new NotImplementedException();
+            var song = await this.db.Songs.FindAsync(id);
+
+            if (song == null)
+            {
+                return;
+            }
+
+            song.Name = name;
+            song.Price = price;
+            song.Duration = duration;
+            song.ArtistId = artistId;
+            song.Ganre = ganre;
+
+            this.db.Songs.Update(song);
+            await this.db.SaveChangesAsync();
         }
 
-        public Task<bool> ExistAsync(int id)
+        public async Task<bool> ExistAsync(int id)
         {
-            throw new NotImplementedException();
+            return await this.db.Songs
+                .AnyAsync(s => s.Id == id);
         }
 
-        public Task<AdminSongEditServiceModel> GetByIdAsync(int id)
+        public async Task<AdminSongEditServiceModel> GetByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            return await this.db.Songs
+                .Where(s => s.Id == id)
+                .Select(s => new AdminSongEditServiceModel
+                {
+                    Name = s.Name,
+                    Artist = s.Artist.Name,
+                    Duration = s.Duration,
+                    Price = s.Price
+                })
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<int> TotalAsync()
+        {
+            return await this.db.Songs.CountAsync();
         }
 
         public bool IsGanreExist(int ganreValueId)
         {
-            throw new NotImplementedException();
-        }
+            var ganresCount = Enum.GetValues(typeof(Ganre)).Length;
 
-        public Task<int> TotalAsync()
-        {
-            throw new NotImplementedException();
+            return ganreValueId >= 0 && ganreValueId < ganresCount;
         }
     }
 }

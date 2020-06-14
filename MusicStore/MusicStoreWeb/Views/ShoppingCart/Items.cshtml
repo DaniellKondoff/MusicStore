@@ -1,0 +1,61 @@
+﻿@model CartItemsViewModel
+
+<h2>Your shopping cart</h2>
+<h4>Here are the delicious pies in your shopping cart.</h4>
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Selected amount</th>
+            <th>Name</th>
+            <th class="text-right">Price</th>
+            <th class="text-right">Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.ShoppingSongs)
+        {
+            <tr>
+                <td class="text-center">@item.Quantity</td>
+                <td class="text-left">@item.Name</td>
+                <td class="text-right">@item.Price.ToString("c")</td>
+                <td class="text-right">
+                    @((item.Quantity * item.Price).ToString("c"))
+                </td>
+                <td>
+                    <a class="btn btn-primary" asp-controller="ShoppingCart" asp-action="RemoveFromCart" asp-route-id="@item.Id" asp-route-name="@item.Name">Remove Item</a>
+                </td>
+            </tr>
+        }
+        @foreach (var item in Model.ShoppingAlbums)
+        {
+            <tr>
+                <td class="text-center">@item.Quantity</td>
+                <td class="text-left">@item.Name</td>
+                <td class="text-right">@item.Price.ToString("c")</td>
+                <td class="text-right">
+                    @((item.Quantity * item.Price).ToString("c"))
+                </td>
+                <td>
+                    <a class="btn btn-primary" asp-controller="ShoppingCart" asp-action="RemoveFromCart" asp-route-id="@item.Id" asp-route-name="@item.Name">Remove Item</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="3" class="text-right">Total:</td>
+            <td class="text-right">
+                @{
+                    var totalSum = Model.ShoppingSongs.Sum(s => s.Price * s.Quantity) + Model.ShoppingAlbums.Sum(s => s.Price * s.Quantity);
+                }
+                @totalSum.ToString("c")
+            </td>
+            @if (Model.ShoppingSongs.Count() > 0 || Model.ShoppingAlbums.Count() > 0)
+            {
+                <td>
+                    <a class="btn btn-primary" asp-controller="ShoppingCart" asp-action="FinishOrder">Finish Order</a>
+                </td>
+            }
+        </tr>
+    </tfoot>
+</table>

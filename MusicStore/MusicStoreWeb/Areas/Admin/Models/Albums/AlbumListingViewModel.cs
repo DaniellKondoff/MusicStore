@@ -1,4 +1,5 @@
-﻿using MusicStoreWeb.Services;
+﻿using MusicStoreWeb.Areas.Admin.Services.Models.Albums;
+using MusicStoreWeb.Services;
 using System;
 using System.Collections.Generic;
 
@@ -6,7 +7,7 @@ namespace MusicStoreWeb.Areas.Admin.Models.Albums
 {
     public class AlbumListingViewModel
     {
-        //public IEnumerable<AdminAlbumsListingServiceModel> AllAlbums { get; set; }
+        public IEnumerable<AdminAlbumsListingServiceModel> AllAlbums { get; set; }
 
         public int TotalAlbums { get; set; }
 

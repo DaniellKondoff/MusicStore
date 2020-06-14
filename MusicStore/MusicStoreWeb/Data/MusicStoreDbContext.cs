@@ -15,6 +15,10 @@ namespace MusicStoreWeb.Data
 
         public DbSet<SongAlbum> SongsAlbums { get; set; }
 
+        public DbSet<Order> Orders { get; set; }
+
+        public DbSet<OrderItem> OrderItems { get; set; }
+
         public MusicStoreDbContext(DbContextOptions<MusicStoreDbContext> options)
             : base(options)
         {
@@ -24,6 +28,7 @@ namespace MusicStoreWeb.Data
         {
             builder.ApplyConfiguration(new SongAlbumConfiguration());
             builder.ApplyConfiguration(new ArtistConfiguration());
+            builder.ApplyConfiguration(new OrderConfiguration());
 
             base.OnModelCreating(builder);
         }
